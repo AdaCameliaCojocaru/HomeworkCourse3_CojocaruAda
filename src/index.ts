@@ -1,9 +1,8 @@
 import fs from "fs";
-import got from "got";
 import inquirer from 'inquirer';
 import { v4 as uuid } from 'uuid';
 
-class MyCatalog {
+class Student {
     public id: string;
     public name: string;
     public nrClass: number;
@@ -27,9 +26,9 @@ class Grade {
     }
 }
 
-const studentArray:Array<MyCatalog> = [];
+const studentArray:Array<Student> = [];
 
-async function addStudent (student:MyCatalog):Promise<void>{
+async function addStudent (student:Student):Promise<void>{
     studentArray.push(student);
     await fs.writeFileSync("students.json", JSON.stringify(studentArray));
     
@@ -60,13 +59,14 @@ function insertStudent(): void {
         }
     ])
     .then (answers =>{
-        const newStudent:MyCatalog = new MyCatalog(answers["student_Name"],answers["class_number"]);
+        const newStudent:Student = new Student(answers["student_Name"],answers["class_number"]);
         addStudent(newStudent);
         return main();
     })
 }
 
-function checkExistStudent(name:string):MyCatalog | undefined {
+
+function checkExistStudent(name:string):Student | undefined {
     for (const studentRecord of studentArray){
         if(studentRecord.name === name){
             return studentRecord;
@@ -110,7 +110,7 @@ function gradeStudent():void{
         }
     ])
     .then(answers=>{
-        const searchStudent:MyCatalog = checkExistStudent(answers["std_Name"]) as MyCatalog ;
+        const searchStudent:Student = checkExistStudent(answers["std_Name"]) as Student ;
         if (searchStudent === undefined){
             console.log("Student doesn't exist!");
         } else{
