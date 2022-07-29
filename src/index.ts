@@ -28,7 +28,7 @@ class Grade {
   }
 }
 
-const studentArray: Array<Student> = [];
+let studentArray: Array<Student> = [];
 
 async function addStudent(student: Student): Promise<void> {
   studentArray.push(student);
@@ -87,7 +87,7 @@ async function upgrade() {
   }
 }
 
-const gradeArray: Array<Grade> = [];
+let gradeArray: Array<Grade> = [];
 function gradeStudent(): void {
   inquirer
     .prompt([
@@ -169,6 +169,8 @@ function seeStudent(): void {
 }
 
 function main(): void {
+    studentArray =JSON.parse( fs.readFileSync("students.json", "utf-8") );
+    gradeArray = JSON.parse (fs.readFileSync("grades.json", "utf-8"));
   inquirer
     .prompt([
       {
