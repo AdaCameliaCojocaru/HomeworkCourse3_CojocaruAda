@@ -1,56 +1,59 @@
 import { Request, Response } from "express";
 
 import bodyParser from "body-parser";
+import cors from "cors";
 import fs from "fs";
 import { v4 as uuid } from "uuid";
 
 const express = require('express');
 const app = express();
-const port = 3000;
+const port = 4000;
 
 // const app: Application = express();
 // app.use(bodyParser.json());
 
+app.use(cors());
+
 app.use(bodyParser.json());
 
-// type Students ={
-//     id:string;
-//     name:string;
-//     nrClass:number;
-// };
+type Students ={
+    id:string;
+    name:string;
+    nrClass:number;
+};
 
-class Students {
-    public id: string;
-    public name: string;
-    public nrClass: number;
+// class Students {
+//     public id: string;
+//     public name: string;
+//     public nrClass: number;
   
-    constructor(name: string, nrClass: number) {
-      this.id = uuid();
-      this.name = name || "";
-      this.nrClass = nrClass;
-    }
-  }
+//     constructor(name: string, nrClass: number) {
+//       this.id = uuid();
+//       this.name = name || "";
+//       this.nrClass = nrClass;
+//     }
+//   }
 
-// type Grade = {
-//     id:string;
-//     idStudent: string;
-//     subject: string;
-//     grade: number;
-// };
+type Grade = {
+    id:string;
+    idStudent: string;
+    subject: string;
+    grade: number;
+};
 
-class Grade {
-  public id: string;
-  public idStudent: string;
-  public subject: string;
-  public grade: number;
+// class Grade {
+//   public id: string;
+//   public idStudent: string;
+//   public subject: string;
+//   public grade: number;
 
-  constructor(idStudent: string, subject: string, grade: number) {
-    this.id = uuid();
-    this.idStudent = idStudent;
-    this.subject = subject;
-    this.grade = grade;
-  }
-}
+//   constructor(idStudent: string, subject: string, grade: number) {
+//     this.id = uuid();
+//     this.idStudent = idStudent;
+//     this.subject = subject;
+//     this.grade = grade;
+//   }
+// }
 
 let studentArray:Array<Students> = [];
 let gradeArray:Array<Grade> = [];
@@ -75,35 +78,58 @@ app.get('/garde/:name', (req: Request, res: Response) => {
 });
 
 app.post('/insertStudent', (req:Request, res:Response) =>{
-  const newStudent:Students = new Students(req.body.name, req.body.nrClass);  
+  if (!req.body.name) {
+    res.status(400).send("Please enter the name!");
+    return;
+  } else if (req.body.classNr <= 0 || req.body.classNr >= 12 || isNaN(req.body.classNr)) {
+      res.status(400).send("Please enter the correct class number!");
+      return;
+  }
+  const newStudent: Students = {
+      id: uuid(),
+      name: req.body.name,
+      nrClass: req.body.nrClass,
+    };
+    studentArray.push(newStudent);
+    res.send(newStudent);
+    writeStudents();
+  //const newStudent:Students = new Students(req.body.name, req.body.nrClass);  
   if (!newStudent){
     res.status(404).send("No student sent!");
   }
-  const newStudentObject:Students = {id:uuid(), name:newStudent.name, nrClass:newStudent.nrClass};
-  studentArray.push(newStudentObject);
-  res.send({...newStudentObject, status:200} as Students);
+  studentArray.push(newStudent);
+  res.send(newStudent);
   writeStudents();
 });
 
-app.post("/gradeStudent", (req:Request, res:Response) => {
-  const studentRecord = checkForStudent(req.params.name);
-  if (!studentRecord){
-     res.status(404).send("Error!");
-  }
-  const newGrade: Grade = new Grade (req.body.idStudent, req.body.subject, req.body.grade);
-  const newGradeObject:Grade = {id:uuid(), idStudent:newGrade.idStudent, subject:newGrade.subject, grade:newGrade.grade};
-  gradeArray.push(newGradeObject);
-  res.send({...newGradeObject, status:200} as Grade);
-  writeGrade();
+// app.post(route, function(req, res){
+//   //this is a callback function
+// })
 
-  // const newGrade: Grade = new Grade (req.body.idStudent, req.body.subject, req.body.grade);
-  // if (!newGrade){
-  //   res.status(404).send("Error!");
-  // }
-  // const newGradeObject:Grade = {id:uuid(), idStudent:newGrade.idStudent, subject:newGrade.subject, grade:newGrade.grade};
-  // gradeArray.push(newGradeObject);
-  // res.send({...newGradeObject, status:200} as Grade);
-  // writeGrade();
+app.post("/gradeStudent", (req:Request, res:Response) => {
+  const existingStudent = checkForStudent(req.body.studentName);
+  if (!req.body.studentName) {
+    res.status(400).send("Please enter the name!");
+    return;
+  } else if (!req.body.subject) {
+    res.status(400).send("Please enter the subject!");
+    return;
+  } else if (isNaN(req.body.grade) || req.body.grade <= 1 || req.body.grade >= 10) {
+    res.status(400).send("Please enter the correct number grade!");
+    return;
+  } else if (existingStudent === undefined) {
+    res.status(400).send("This student does not exist!");
+    return;
+  }
+  const grade: Grade = {
+    id: uuid(),
+    idStudent: existingStudent.id,
+    subject: req.body.subject,
+    grade: req.body.grade,
+  };
+  gradeArray.push(grade);
+  res.send(grade);
+  writeGrade();
 
 })
 
