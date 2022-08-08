@@ -16,6 +16,24 @@ app.use(cors());
 
 app.use(bodyParser.json());
 
+type DadJoke = {
+  id: string;
+  joke: string;
+};
+
+type ErrorMsg = {
+  errMsg: string;
+};
+
+type StatusCode = {
+  status: string;
+};
+
+type DadJokeResponse = DadJoke | StatusCode;
+type ErrorResponse = ErrorMsg | StatusCode;
+
+const myJokeDatabase: Array<DadJoke> = [];
+
 type Students ={
     id:string;
     name:string;
@@ -37,6 +55,7 @@ type Students ={
 type Grade = {
     id:string;
     idStudent: string;
+    studentName:string;
     subject: string;
     grade: number;
 };
@@ -77,34 +96,49 @@ app.get('/garde/:name', (req: Request, res: Response) => {
   res.send(studentGradeArray);
 });
 
+app.post("/addJoke/:joke", (req: Request, res: Response) => {
+  const newJoke = req.params.joke;
+  const newJokeObject: DadJoke = { id: uuid(), joke: newJoke };
+  myJokeDatabase.push(newJokeObject);
+  res.send({ ...newJokeObject, status: 200 } as DadJokeResponse);
+  writeJokes();
+});
+
+app.post("/addJokeViaBody", (req: Request, res: Response) => {
+  const newJoke = req.body.joke;
+  if (!newJoke) {
+    res.send({ errMsg: "No joke sent", status: 404 } as ErrorResponse);
+  }
+  const newJokeObject: DadJoke = { id: uuid(), joke: newJoke };
+  myJokeDatabase.push(newJokeObject);
+  res.send({ ...newJokeObject, status: 200 } as DadJokeResponse);
+  writeJokes();
+});
+
+
+function writeJokes (): void {
+  try {
+    fs.writeFileSync("dadJokes.json", JSON.stringify(myJokeDatabase));
+  } catch {
+    console.log("Something wrong!");
+  }
+}
 app.post('/insertStudent', (req:Request, res:Response) =>{
+  // res.send("Ana are mere!")
   if (!req.body.name) {
-    res.status(400).send("Please enter the name!");
-    return;
+    return res.status(400).send("Please enter the name!");
   } else if (req.body.classNr <= 0 || req.body.classNr >= 12 || isNaN(req.body.classNr)) {
-      res.status(400).send("Please enter the correct class number!");
-      return;
+      return res.status(400).send("Please enter the correct class number!");
   }
   const newStudent: Students = {
       id: uuid(),
       name: req.body.name,
-      nrClass: req.body.nrClass,
+      nrClass: req.body.classNr,
     };
     studentArray.push(newStudent);
-    res.send(newStudent);
     writeStudents();
-  //const newStudent:Students = new Students(req.body.name, req.body.nrClass);  
-  if (!newStudent){
-    res.status(404).send("No student sent!");
-  }
-  studentArray.push(newStudent);
-  res.send(newStudent);
-  writeStudents();
+    return res.send(newStudent);
 });
-
-// app.post(route, function(req, res){
-//   //this is a callback function
-// })
 
 app.post("/gradeStudent", (req:Request, res:Response) => {
   const existingStudent = checkForStudent(req.body.studentName);
@@ -123,14 +157,14 @@ app.post("/gradeStudent", (req:Request, res:Response) => {
   }
   const grade: Grade = {
     id: uuid(),
+    studentName: req.body.studentName,
     idStudent: existingStudent.id,
     subject: req.body.subject,
     grade: req.body.grade,
   };
   gradeArray.push(grade);
-  res.send(grade);
   writeGrade();
-
+  return res.send(grade);
 })
 
 function readStudents (): void {
